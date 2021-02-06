@@ -18,6 +18,14 @@ def upload_to_gspreadsheet(df):
 
     worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 
+    infosheet = sh.worksheet('UpdateInfo')
+    infosheet.update('A1',timestamp())
+
+def timestamp():
+    #today = datetime.date.today()
+
+    today_now = str(datetime.datetime.now()).replace(" ","_")
+    return today_now
 
 def get_table(building_name, url):
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -52,10 +60,8 @@ def get_buildings():
     return building_list
 
 def store_file_locally(df):
-    #today = datetime.date.today()
-
-    today_now = str(datetime.datetime.now()).replace(" ","_")
-    filename=(today_now+'.csv')
+    
+    filename=(timestamp()+'.csv')
 
     # adding a filter based on bedroom
     #df = df.query('Bedrooms>=3')
