@@ -1,9 +1,23 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import datetime
 import subprocess
+import gspread
+import numpy as np
+
+def upload_to_gspreadsheet(df):
+
+
+    gc = gspread.service_account(filename='./credentials.json')
+
+
+    sh = gc.open('JerseyCityRentals')
+    worksheet = sh.worksheet('JCRentals')
+
+    worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+
 
 def get_table(building_name, url):
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -15,6 +29,8 @@ def get_table(building_name, url):
     df['date']=today
     df['building']=building_name
     df['url'] = url
+    df = df.replace(np.nan, '')
+
     return df
 
 def get_buildings():
@@ -35,28 +51,41 @@ def get_buildings():
     building_list = dict(zip(building_names,building_urls))
     return building_list
 
-buildings=get_buildings()
+def store_file_locally(df):
+    #today = datetime.date.today()
 
-df=pd.DataFrame()
-for building_name,url in buildings.items():
-    print(building_name + ": " + url)
-    try:
-        df=df.append(get_table(building_name,url), ignore_index=True)
-    except:
-        print("No apartments found in: "+building_name)
-        continue
+    today_now = str(datetime.datetime.now()).replace(" ","_")
+    filename=(today_now+'.csv')
 
-#today = datetime.date.today()
-today_now = str(datetime.datetime.now()).replace(" ","_")
-filename=(today_now+'.csv')
+    # adding a filter based on bedroom
+    #df = df.query('Bedrooms>=3')
+    #df = df[df.Bedrooms == '3 Bedrooms']
 
-# adding a filter based on bedroom
-#df = df.query('Bedrooms>=3')
-#df = df[df.Bedrooms == '3']
+    print("Results stored in: "+filename)
+    df.to_csv(filename)
+    
+    # Email Options
 
-print("Results stored in: "+filename)
-df.to_csv(filename)
+    #commandline='echo "Rental Scrape Raw Data" | mail -s "Rental Scrape Raw Data" <youremail> -A '+filename
+    #print(commandline)
+    #subprocess.Popen(commandline, shell=True)
 
-#commandline='echo "Rental Scrape Raw Data" | mail -s "Rental Scrape Raw Data" <youremail> -A '+filename
-#print(commandline)
-#subprocess.Popen(commandline, shell=True)
+def main():
+
+    buildings=get_buildings()
+
+    df=pd.DataFrame()
+    for building_name,url in buildings.items():
+        print(building_name + ": " + url)
+        try:
+            df=df.append(get_table(building_name,url), ignore_index=True)
+        except:
+            print("No apartments found in: "+building_name)
+            continue
+
+
+    upload_to_gspreadsheet(df)
+    
+
+if __name__ == "__main__":
+    main()
