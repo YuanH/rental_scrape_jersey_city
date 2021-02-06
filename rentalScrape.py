@@ -50,6 +50,10 @@ for building_name,url in buildings.items():
 today_now = str(datetime.datetime.now()).replace(" ","_")
 filename=(today_now+'.csv')
 
+# adding a filter based on bedroom
+#df = df.query('Bedrooms>=3')
+#df = df[df.Bedrooms == '3']
+
 print("Results stored in: "+filename)
 df.to_csv(filename)
 
